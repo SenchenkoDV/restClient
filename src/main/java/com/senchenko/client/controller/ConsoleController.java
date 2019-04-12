@@ -10,6 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -18,14 +22,30 @@ public class ConsoleController implements CommandLineRunner {
     private static final String RESULT = "City: %s, temperature = %s \n";
 
     @Value("${integration.url}")
-    private String integrationUrl;
+    private String integrationUrl = "http://localhost:8081/integration/temperature";
 
     @Override
     public void run(String... args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        String cityName;
+
+        try (ServerSocket serverSocket = new ServerSocket(8082)) {
+            Socket socket = serverSocket.accept();
+            Scanner scanner = new Scanner(socket.getInputStream());
+            PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
+            while (scanner.hasNextLine()) {
+                String str = scanner.nextLine();
+                printWriter.println("you have send: " + str);
+                System.out.println(getTime(str));
+                if (str.equals("exit")) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getTime(String cityName) {
         while (true) {
-            cityName = scanner.nextLine();
             RestTemplate restTemplate = new RestTemplate();
             WeatherRequest weatherRequest = new WeatherRequest();
             weatherRequest.setName(cityName);
@@ -35,7 +55,7 @@ public class ConsoleController implements CommandLineRunner {
             JSONObject jsonBody = new JSONObject(Objects.requireNonNull(response.getBody()));
             JSONObject cityResponse = jsonBody.getJSONObject("ns2:getCityResponse");
             JSONObject city = cityResponse.getJSONObject("ns2:city");
-            System.out.printf(RESULT, city.get("ns2:name"), city.get("ns2:temperature"));
+            return String.format(RESULT, city.get("ns2:name"), city.get("ns2:temperature"));
         }
     }
 }
