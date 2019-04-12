@@ -23,12 +23,12 @@ public class ConsoleController implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Scanner scanner = new Scanner(System.in);
-        String city;
+        String cityName;
         while (true) {
-            city = scanner.nextLine();
+            cityName = scanner.nextLine();
             RestTemplate restTemplate = new RestTemplate();
             WeatherRequest weatherRequest = new WeatherRequest();
-            weatherRequest.setName(city);
+            weatherRequest.setName(cityName);
             HttpEntity<WeatherRequest> request = new HttpEntity<>(weatherRequest);
             ResponseEntity<String> response = restTemplate
                     .exchange(integrationUrl, HttpMethod.POST, request, String.class);
