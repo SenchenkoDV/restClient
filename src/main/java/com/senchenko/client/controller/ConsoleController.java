@@ -32,10 +32,10 @@ public class ConsoleController implements CommandLineRunner {
             HttpEntity<WeatherRequest> request = new HttpEntity<>(weatherRequest);
             ResponseEntity<String> response = restTemplate
                     .exchange(integrationUrl, HttpMethod.POST, request, String.class);
-            JSONObject jsonObject = new JSONObject(Objects.requireNonNull(response.getBody()));
-            JSONObject jsonObject1 = jsonObject.getJSONObject("ns2:getCityResponse");
-            JSONObject jsonObject2 = jsonObject1.getJSONObject("ns2:city");
-            System.out.printf(RESULT, jsonObject2.get("ns2:name"), jsonObject2.get("ns2:temperature"));
+            JSONObject jsonBody = new JSONObject(Objects.requireNonNull(response.getBody()));
+            JSONObject cityResponse = jsonBody.getJSONObject("ns2:getCityResponse");
+            JSONObject city = cityResponse.getJSONObject("ns2:city");
+            System.out.printf(RESULT, city.get("ns2:name"), city.get("ns2:temperature"));
         }
     }
 }
