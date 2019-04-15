@@ -1,6 +1,7 @@
 package com.senchenko.client.controller;
 
 import com.senchenko.client.entity.WeatherRequest;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -22,7 +23,7 @@ public class ConsoleController implements CommandLineRunner {
     private static final String RESULT = "City: %s, temperature = %s \n";
 
     @Value("${integration.url}")
-    private String integrationUrl = "http://localhost:8081/integration/temperature";
+    private static String integrationUrl = "http://localhost:8081/integration/temperature";
 
     @Override
     public void run(String... args) throws Exception {
@@ -31,31 +32,35 @@ public class ConsoleController implements CommandLineRunner {
             Socket socket = serverSocket.accept();
             Scanner scanner = new Scanner(socket.getInputStream());
             PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
+            printWriter.println("Hello! Enter the city name.");
             while (scanner.hasNextLine()) {
-                String str = scanner.nextLine();
-                printWriter.println("you have send: " + str);
-                System.out.println(getTime(str));
-                if (str.equals("exit")) {
+                String line = scanner.nextLine();
+                if (line.equals("exit")) {
                     break;
                 }
+                try {
+                    String time = getTime(line);
+                    printWriter.println(time);
+                }catch (IllegalStateException | JSONException e){
+                    printWriter.println("Wrong city!");
+                }
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private String getTime(String cityName) {
-        while (true) {
-            RestTemplate restTemplate = new RestTemplate();
-            WeatherRequest weatherRequest = new WeatherRequest();
-            weatherRequest.setName(cityName);
-            HttpEntity<WeatherRequest> request = new HttpEntity<>(weatherRequest);
-            ResponseEntity<String> response = restTemplate
-                    .exchange(integrationUrl, HttpMethod.POST, request, String.class);
-            JSONObject jsonBody = new JSONObject(Objects.requireNonNull(response.getBody()));
-            JSONObject cityResponse = jsonBody.getJSONObject("ns2:getCityResponse");
-            JSONObject city = cityResponse.getJSONObject("ns2:city");
-            return String.format(RESULT, city.get("ns2:name"), city.get("ns2:temperature"));
-        }
+    private static String getTime(String cityName) {
+        RestTemplate restTemplate = new RestTemplate();
+        WeatherRequest weatherRequest = new WeatherRequest();
+        weatherRequest.setName(cityName);
+        HttpEntity<WeatherRequest> request = new HttpEntity<>(weatherRequest);
+        ResponseEntity<String> response = restTemplate
+                .exchange(integrationUrl, HttpMethod.POST, request, String.class);
+        JSONObject jsonBody = new JSONObject(Objects.requireNonNull(response.getBody()));
+        JSONObject cityResponse = jsonBody.getJSONObject("ns2:getCityResponse");
+        JSONObject city = cityResponse.getJSONObject("ns2:city");
+        return String.format(RESULT, city.get("ns2:name"), city.get("ns2:temperature"));
     }
 }
