@@ -23,7 +23,7 @@ public class ConsoleController implements CommandLineRunner {
     private static final String RESULT = "City: %s, temperature = %s \n";
 
     @Value("${integration.url}")
-    private static String integrationUrl = "http://localhost:8081/integration/temperature";
+    private static String integrationUrl = "http://integration:8081/integration/temperature";
 
     @Override
     public void run(String... args) throws Exception {
